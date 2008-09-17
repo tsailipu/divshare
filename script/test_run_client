@@ -1,0 +1,59 @@
+#!/usr/bin/env ruby
+# Pass a YAML file like the following as the command-line argument to load 
+# your personal account settings and test with your account.
+#
+# api_key: key
+# api_secret: secret
+# email: email@email.com
+# password: password
+# files: 
+#   - file_1_id
+#   - file_2_id
+
+$:.unshift File.join(File.dirname(__FILE__), '..', 'lib')
+require 'divshare'
+include Divshare
+
+if ARGV.length > 1
+  puts "Usage: divshare_test_run [config.yml]" 
+  exit(0)
+end
+
+config = {}
+if ARGV.length == 1
+  config = YAML.load(File.open(ARGV[0]))
+else  
+  print "API key: "
+  config["api_key"] = gets
+  print "API secret: "
+  config["api_secret"] = gets
+  print "Email: "
+  config["email"] = gets
+  print "Password (will show up on screen): "
+  config["password"]= gets
+end
+client = Client.new(config["api_key"], config["api_secret"], config["email"], config["password"])
+client.login
+puts "Logged in successfully."
+puts "API session key: #{client.api_session_key}"
+puts "Getting user info..."
+puts client.get_user_info
+puts "Getting user files..."
+files = client.get_user_files
+puts "Found #{files.length} files:"
+files.each {|f| puts "#{f}\n"}
+puts
+
+file = files.find {|f| f.file_name == "License.txt"}
+puts "Getting info for file #{file.file_name}"
+single_file = client.get_files(file.file_id)
+puts single_file
+client.logout
+if client.api_session_key
+  puts "Error logging out."
+else
+  puts "Logged out successfully."
+end
+  
+
+
